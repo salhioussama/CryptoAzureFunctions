@@ -5,6 +5,9 @@
     <Authors>Oussama SALHI</Authors>
     <Description>Azure Timer function that is filling a mongo database with crypto currencies quotations imported thanks to CryptoQuote NuGet API</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/salhioussama/CryptoAzureFunctions</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/salhioussama/CryptoAzureFunctions</RepositoryUrl>
+    <PackageTags>Cryptocurrencies quotation repo</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile></DocumentationFile>
