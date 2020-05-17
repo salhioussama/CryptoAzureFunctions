@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CryptoAzureFunctions</name>
+    </assembly>
+    <members>
+        <member name="T:CryptoAzureFunctions.FillMongoDB">
+            <summary>
+            Root class for connexion intialization and data insertion into Mongo database.
+            </summary>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.#ctor(System.String,System.String,System.Nullable{System.Int32},System.String,System.Boolean,System.Boolean,System.String,System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            Initialize the core FillMongoDB object linked to a specific database, collection and list of symbols.
+            </summary>
+            <param name="connection_string">Connection string to establish connection with NoSql database.</param>
+            <param name="db_name">Database to use to insert data.</param>
+            <param name="offer_throughput">Throughput for azure cosmos db in case of new collection.</param>
+            <param name="collection_name">Collection to use to insert data.</param>
+            <param name="use_ssl">Use SSL to connect to the database.</param>
+            <param name="create_default_indexes">Create default index in new collection.</param>
+            <param name="shard_key">Shard key if newly created collection should be sharded.</param>
+            <param name="allow_async_insert">Insert new data asynchrounously.</param>
+            <param name="exchange_api_parallel_tasks">Send n parallel requests to the exchange API.</param>
+            <param name="exchange_api_max_retry_count">Try n times to request data from the exchange API in case of errors.</param>
+            <returns>FillMongoDB object linked to a specific database, collection and list of symbols.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.SetUpDataBase(MongoDB.Driver.IMongoDatabase,System.String,System.String,System.Boolean)">
+            <summary>
+            Create a new collection if it is not already present and add some indexes if requested.
+            </summary>
+            <param name="db">MongoDB database to use.</param>
+            <param name="collection_name">Collection name</param>
+            <param name="shard_key">Shard key if newly created collection should be sharded.</param>
+            <param name="create_default_indexes">Create default index in new collection.</param>
+            <returns>List of BsonDocuments and List of all exceptions occured.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.UpdateOfferThroughput(System.Nullable{System.Int32})">
+            <summary>
+            Update Azure Cosmos DB Throughput.
+            </summary>
+            <param name="offer_throughput">Needed RU/s.</param>
+            <returns>Result of the customAction request.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.Run(System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{CryptoQuote.HuobiAPI.DataObjectsModel.TickerPeriod}})">
+            <summary>
+            Request data from exchange API and add them to CosmosDB (NoSql MongoDB).
+            </summary>
+            <param name="requests_info">Dictionary of requested crypto currencies and their timeframe.</param>
+            <returns>The execution message and the list of all exceptions to log.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.GetListBson(System.Threading.Tasks.Task{System.Collections.Generic.List{CryptoQuote.HuobiAPI.DataObjectsModel.Ticker}},CryptoAzureFunctions.TickerHistoryParameters)">
+            <summary>
+            Parse results from exchange API (Ticker format) to BsonDocument and add it to a list.
+            </summary>
+            <param name="task">Bulk of RestApi.GetTickerHistory tasks to run.</param>
+            <param name="inputs">Input parameters for RestApi.GetTickerHistory</param>
+            <returns>List of BsonDocuments and List of all exceptions occured.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.GetLastTimestamps(System.Collections.Generic.List{System.String})">
+            <summary>
+            Get the last timestamp for each symbol and period, so we can request only the missing data.
+            This function is important because it helps us to reduce the bandwidth consumption in Azure cloud.
+            </summary>
+            <param name="symbols"> List of symbols we are trying to get information about.</param>
+            <returns>Dictionary of keys: Tuple(symbol, period) and values: last timestamp.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.GetRequestsInfos(System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{CryptoQuote.HuobiAPI.DataObjectsModel.TickerPeriod}},System.Numerics.BigInteger)">
+            <summary>
+            Construct the list of all the request we should send to the exchange API.
+            </summary>
+            <param name="quote_to_request">List of symbols to insert with their period.</param>
+            <param name="ts_today">Today UTC Unix timestamp</param>
+            <returns>List of tuple representing the parameters we should send to RestApi.GetTickerHistory</returns>
+        </member>
+        <member name="T:CryptoAzureFunctions.TimerTriggerFunction">
+            <summary>
+            Azure Timer class. Auto generated with visual studio 2019
+            </summary>
+        </member>
+        <member name="M:CryptoAzureFunctions.TimerTriggerFunction.Run(Microsoft.Azure.WebJobs.TimerInfo,Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Entry point for Timer function.
+            </summary>
+            <param name="myTimer">Cron timer. Its value should be saved in azure function configuration.</param>
+            <param name="log"></param>
+        </member>
+        <member name="M:CryptoAzureFunctions.TimerTriggerFunction.GetEnvironmentVariable(System.String)">
+            <summary>
+            Utility function to get environment variables. It is necessary to get connexion string, timer CRON, async mode and so on.
+            This environment variables are comming from Azure function configuration panel.
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

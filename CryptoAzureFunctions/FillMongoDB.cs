@@ -25,6 +25,9 @@ namespace CryptoAzureFunctions
         }
     }
 
+    /// <summary>
+    /// Root class for connexion intialization and data insertion into Mongo database.
+    /// </summary>
     public class FillMongoDB
     {
         #region variables section
@@ -41,7 +44,6 @@ namespace CryptoAzureFunctions
         private readonly Rest RestApi = new Rest();
 
         private Dictionary<Tuple<string, string>, BigInteger> _last_ts;
-        public Dictionary<Tuple<string, string>, BigInteger> last_ts { get => _last_ts; }
         #endregion
 
         #region initializer
@@ -334,7 +336,7 @@ namespace CryptoAzureFunctions
         /// <summary>
         /// Parse results from exchange API (Ticker format) to BsonDocument and add it to a list.
         /// </summary>
-        /// <param name="all_tasks">Bulk of RestApi.GetTickerHistory tasks to run.</param>
+        /// <param name="task">Bulk of RestApi.GetTickerHistory tasks to run.</param>
         /// <param name="inputs">Input parameters for RestApi.GetTickerHistory</param>
         /// <returns>List of BsonDocuments and List of all exceptions occured.</returns>
         private (List<BsonDocument> bson, Exception ex) GetListBson(Task<List<Ticker>> task, TickerHistoryParameters inputs)
@@ -384,7 +386,7 @@ namespace CryptoAzureFunctions
         /// This function is important because it helps us to reduce the bandwidth consumption in Azure cloud.
         /// </summary>
         /// <param name="symbols"> List of symbols we are trying to get information about.</param>
-        /// <returns>Dictionary of keys: Tuple<symbol, period> and values: last timestamp.</symbol></returns>
+        /// <returns>Dictionary of keys: Tuple(symbol, period) and values: last timestamp.</returns>
         private Dictionary<Tuple<string, string>, BigInteger> GetLastTimestamps(List<string> symbols)
         {
             var res = new Dictionary<Tuple<string, string>, BigInteger>(symbols.Count());
@@ -434,7 +436,7 @@ namespace CryptoAzureFunctions
         #endregion
     }
 
-    public static class UtilsExtensions
+    internal static class UtilsExtensions
     {
         public static Int64 ToSeconds(this TickerPeriod period)
         {

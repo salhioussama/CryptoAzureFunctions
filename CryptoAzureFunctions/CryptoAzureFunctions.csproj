@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
     <Authors>Oussama SALHI</Authors>
     <Description>Azure Timer function that is filling a mongo database with crypto currencies quotations imported thanks to CryptoQuote NuGet API</Description>
@@ -10,7 +11,10 @@
     <PackageTags>Cryptocurrencies quotation repo</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
+    <DocumentationFile>Doc\CryptoAzureFunctions.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>Doc\CryptoAzureFunctions.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CryptoQuoteAPI" Version="1.0.1" />
@@ -25,5 +29,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Doc\" />
   </ItemGroup>
 </Project>

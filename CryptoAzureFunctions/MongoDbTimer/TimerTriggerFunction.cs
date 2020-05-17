@@ -9,6 +9,9 @@ using CryptoQuote.HuobiAPI.DataObjectsModel;
 
 namespace CryptoAzureFunctions
 {
+    /// <summary>
+    /// Azure Timer class. Auto generated with visual studio 2019
+    /// </summary>
     public static class TimerTriggerFunction
     {
         private static Dictionary<string, List<TickerPeriod>> symbols = new Dictionary<string, List<TickerPeriod>> {
@@ -47,6 +50,11 @@ namespace CryptoAzureFunctions
         }
 
 
+        /// <summary>
+        /// Entry point for Timer function.
+        /// </summary>
+        /// <param name="myTimer">Cron timer. Its value should be saved in azure function configuration.</param>
+        /// <param name="log"></param>
         [FunctionName("PopulateDatabase")]
         public static void Run([TimerTrigger("%PopulateDatabaseTriggerCron%")]TimerInfo myTimer, ILogger log)
         {
@@ -76,6 +84,12 @@ namespace CryptoAzureFunctions
             }
         }
 
+        /// <summary>
+        /// Utility function to get environment variables. It is necessary to get connexion string, timer CRON, async mode and so on.
+        /// This environment variables are comming from Azure function configuration panel.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static string GetEnvironmentVariable(string name)
         {
             return Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
