@@ -60,6 +60,7 @@ namespace CryptoAzureFunctions
         {
             try
             {
+                fill_obj.SetLogger(log);
                 var (message, list_exceptions) = fill_obj.Run(symbols);
                 var log_exceptions = list_exceptions != null ? string.Join(Environment.NewLine, list_exceptions.Select(x => x.Message)) : string.Empty;
 
@@ -67,7 +68,7 @@ namespace CryptoAzureFunctions
                 {
                     log.LogInformation($"{DateTime.Now}: " + message);
                 }
-
+                
                 else if (string.Equals(message, "Partially Failed", StringComparison.CurrentCultureIgnoreCase))
                 {
                     log.LogError($"{DateTime.Now}: Partially Failed: " + log_exceptions + ".");

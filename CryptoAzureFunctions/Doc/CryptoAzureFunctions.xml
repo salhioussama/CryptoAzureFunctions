@@ -9,7 +9,7 @@
             Root class for connexion intialization and data insertion into Mongo database.
             </summary>
         </member>
-        <member name="M:CryptoAzureFunctions.FillMongoDB.#ctor(System.String,System.String,System.Nullable{System.Int32},System.String,System.Boolean,System.Boolean,System.String,System.Boolean,System.Int32,System.Int32)">
+        <member name="M:CryptoAzureFunctions.FillMongoDB.#ctor(System.String,System.String,System.Nullable{System.Int32},System.String,System.Boolean,System.Boolean,System.String,System.Boolean,System.Int32,System.Int32,Microsoft.Extensions.Logging.ILogger)">
             <summary>
             Initialize the core FillMongoDB object linked to a specific database, collection and list of symbols.
             </summary>
@@ -23,7 +23,19 @@
             <param name="allow_async_insert">Insert new data asynchrounously.</param>
             <param name="exchange_api_parallel_tasks">Send n parallel requests to the exchange API.</param>
             <param name="exchange_api_max_retry_count">Try n times to request data from the exchange API in case of errors.</param>
+            <param name="log">Logger object.</param>
             <returns>FillMongoDB object linked to a specific database, collection and list of symbols.</returns>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.SetLogger(Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Set logger object.
+            </summary>
+            <param name="log"></param>
+        </member>
+        <member name="M:CryptoAzureFunctions.FillMongoDB.log(System.String,System.Object[])">
+            <summary>
+            log information if logger is not null.
+            </summary>
         </member>
         <member name="M:CryptoAzureFunctions.FillMongoDB.SetUpDataBase(MongoDB.Driver.IMongoDatabase,System.String,System.String,System.Boolean)">
             <summary>

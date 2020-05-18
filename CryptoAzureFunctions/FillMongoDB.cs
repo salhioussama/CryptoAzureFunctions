@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Numerics;
 using MongoDB.Driver;
@@ -42,6 +43,7 @@ namespace CryptoAzureFunctions
         private readonly IMongoCollection<BsonDocument> _collection = null;
 
         private readonly Rest RestApi = new Rest();
+        private ILogger _logger = null;
 
         private Dictionary<Tuple<string, string>, BigInteger> _last_ts;
         #endregion
@@ -60,9 +62,10 @@ namespace CryptoAzureFunctions
         /// <param name="allow_async_insert">Insert new data asynchrounously.</param>
         /// <param name="exchange_api_parallel_tasks">Send n parallel requests to the exchange API.</param>
         /// <param name="exchange_api_max_retry_count">Try n times to request data from the exchange API in case of errors.</param>
+        /// <param name="log">Logger object.</param>
         /// <returns>FillMongoDB object linked to a specific database, collection and list of symbols.</returns>
         public FillMongoDB(string connection_string, string db_name, int? offer_throughput, string collection_name, bool use_ssl = false, bool create_default_indexes = false, string shard_key = null,
-            bool allow_async_insert = false, int exchange_api_parallel_tasks = 1, int exchange_api_max_retry_count = 1)
+            bool allow_async_insert = false, int exchange_api_parallel_tasks = 1, int exchange_api_max_retry_count = 1, ILogger log =null)
         {
             if (string.IsNullOrEmpty(connection_string))
                 throw new ArgumentNullException("connection_string");
@@ -73,6 +76,8 @@ namespace CryptoAzureFunctions
             if (string.IsNullOrEmpty(collection_name))
                 throw new ArgumentNullException("collection_name");
 
+            SetLogger(log);
+            
             this.exchange_api_parallel_tasks = exchange_api_parallel_tasks;
             this.exchange_api_max_retry_count = exchange_api_max_retry_count;
             this.allow_async_insert = allow_async_insert;
@@ -90,6 +95,25 @@ namespace CryptoAzureFunctions
             // Create collection if it is not created and add indexes
             _collection = SetUpDataBase(_db, collection_name, shard_key, create_default_indexes);
             //UpdateOfferThroughput(400);
+        }
+
+        /// <summary>
+        /// Set logger object.
+        /// </summary>
+        /// <param name="log"></param>
+        public void SetLogger(ILogger log = null)
+        {
+            if (log != null)
+                _logger = log;
+        }
+
+        /// <summary>
+        /// log information if logger is not null.
+        /// </summary>
+        private void log(string message, params object[] args)
+        {
+            if (_logger != null)
+                _logger.LogInformation(message, args);
         }
 
         /// <summary>
@@ -112,7 +136,7 @@ namespace CryptoAzureFunctions
 
             return col;
         }
-
+        
         private bool CreateCollection(string collection_name, string shard_key)
         {
             // List of all available collections.
@@ -133,17 +157,20 @@ namespace CryptoAzureFunctions
                             command.Add("shardKey", shard_key);
 
                         var response = _db.RunCommand<BsonDocument>(command);
+                        log("Collection {0} created with throughput {1}", collection_name, _offer_throughput);
                     }
 
                     else if ((offer_th <= 0) && !string.IsNullOrEmpty(shard_key))
                     {
-                        var command = new BsonDocument { { "shardCollection", "huobi.spot" }, { "key", shard_key } };
+                        var command = new BsonDocument { { "shardCollection", "huobi." + collection_name }, { "key", shard_key } };
                         var response = _client.GetDatabase("admin").RunCommand<BsonDocument>(command);
+                        log("Collection {0} created with shard key {1}", collection_name, shard_key);
                     }
 
                     else
                     {
                         _db.CreateCollection(collection_name);
+                        log("Collection {0} created.", collection_name);
                     }
 
                     newly_created_collection = true;
@@ -173,6 +200,7 @@ namespace CryptoAzureFunctions
                 try
                 {
                     col.Indexes.CreateMany(index_models);
+                    log("Index creation.");
                 }
                 catch (Exception ex)
                 {
@@ -193,13 +221,15 @@ namespace CryptoAzureFunctions
                 var command = new BsonDocument { { "customAction", "UpdateCollection" }, { "collection", _collection.CollectionNamespace.CollectionName }, { "offerThroughput", offer_throughput } };
                 var response = _db.RunCommand<BsonDocument>(command);
 
+                log("Update offer throughput to {0} for collection {1}.", offer_throughput, _collection.CollectionNamespace.CollectionName);
+
                 return response;
             }
 
             return default(BsonDocument);
         }
         #endregion
-
+        
         /// <summary>
         /// Request data from exchange API and add them to CosmosDB (NoSql MongoDB).
         /// </summary>
@@ -230,6 +260,8 @@ namespace CryptoAzureFunctions
 
                 // Create ConcurrentStack for all requests parameters
                 var all_param_stack = new ConcurrentStack<TickerHistoryParameters>(requests);
+
+                log("{0} exchange requests to be sent.", all_param_stack.Count);
 
                 // Execute async requests in chunks because the exchange API does not accept many requests at once
                 int previous_count = all_param_stack.Count, count = 1, max_retry_count = exchange_api_max_retry_count;
@@ -304,6 +336,9 @@ namespace CryptoAzureFunctions
             {
                 try
                 {
+                    log("Start {0} insertions.", total_elts);
+                    var watch = new System.Diagnostics.Stopwatch();
+                    
                     if (allow_async_insert)
                     {
                         var async_insert_tasks = new List<Task>();
@@ -318,12 +353,18 @@ namespace CryptoAzureFunctions
                             }
                         }
 
+                        watch.Start();
                         Task.WaitAll(async_insert_tasks.ToArray());
+                        watch.Stop();
                     }
                     else
                     {
+                        watch.Start();
                         _collection.InsertMany(bson_format_stack);
+                        watch.Stop();
                     }
+
+                    log("End of {0} insertions - Elapsed time: {1} s", total_elts, watch.ElapsedMilliseconds / 1000.0);
                 }
 
                 catch (Exception ex)
@@ -393,12 +434,20 @@ namespace CryptoAzureFunctions
 
             try
             {
+                log("Start aggregation.");
+                var watch = new System.Diagnostics.Stopwatch();
+
                 var aggregate = _collection.Aggregate().Match(new BsonDocument() { { "ccy", new BsonDocument() { { "$in", new BsonArray(symbols) } } } })
                         .Group(new BsonDocument() { { "_id", new BsonDocument() { { "symbol", "$ccy" }, { "period", "$period" } } }, { "timestamp", new BsonDocument("$max", "$ts") } })
                         .Project(new BsonDocument() { { "_id", 0 }, { "symbol", "$_id.symbol" }, { "period", "$_id.period" }, { "timestamp", 1 } });
 
+                watch.Start();
+
                 // Fill in res dictionary
                 aggregate.ToList().ForEach(elt => res.Add(Tuple.Create(elt["symbol"].ToString(), elt["period"].ToString()), BigInteger.Parse(elt["timestamp"].ToString())));
+
+                watch.Stop();
+                log("End of aggregation - Elapsed time: {0} s", watch.ElapsedMilliseconds / 1000.0);
 
                 return res;
             }
@@ -428,7 +477,8 @@ namespace CryptoAzureFunctions
             var res_query = from elt in quotes
                             from prd in elt.Value
                             let count = _last_ts.ContainsKey(Tuple.Create(elt.Key, prd.ToKey())) ?
-                                        (int)((ts_today - _last_ts[Tuple.Create(elt.Key, prd.ToKey())]) / prd.ToSeconds()) + 1 : 2000
+                                        (int)((ts_today - _last_ts[Tuple.Create(elt.Key, prd.ToKey())]) / prd.ToSeconds()) : 2000
+                            where count > 0
                             select new TickerHistoryParameters(elt.Key, prd, Math.Min(count, 2000));
 
             return res_query.ToList();
