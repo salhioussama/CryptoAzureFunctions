@@ -336,9 +336,9 @@ namespace CryptoAzureFunctions
             {
                 try
                 {
-                    log("Start {0} insertions.", total_elts);
+                    log("Start {0} insertions. Initial database documents count {1}", total_elts, _collection.CountDocuments(new BsonDocument()));
                     var watch = new System.Diagnostics.Stopwatch();
-                    
+
                     if (allow_async_insert)
                     {
                         var async_insert_tasks = new List<Task>();
@@ -364,7 +364,8 @@ namespace CryptoAzureFunctions
                         watch.Stop();
                     }
 
-                    log("End of {0} insertions - Elapsed time: {1} s", total_elts, watch.ElapsedMilliseconds / 1000.0);
+                    log("End of {0} insertions - Elapsed time: {1} s. Final database documents count {2}", total_elts, watch.ElapsedMilliseconds / 1000.0,
+                        _collection.CountDocuments(new BsonDocument()));
                 }
 
                 catch (Exception ex)
