@@ -2,7 +2,7 @@
 C# code for Azure function used to fill in CosmosDB (MongoDB) database with quotations from different exchanges.
 
 ## Dependencies
-This project is depending on *[CryptoExchangeAPI](../../../CryptoExchangeAPI/)*. You need to download this project also.
+This project is depending on Nuget Package *[CryptoQuoteAPI](../../../CryptoQuoteAPI/)*.
 
 
 ## Description
